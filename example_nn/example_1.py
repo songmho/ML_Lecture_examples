@@ -65,13 +65,10 @@ class IMDBReviewClassifier:
         :return:
         """
         self.model = keras.Sequential()
-        self.model.add(Embedding(self.vocab_size, 16, input_shape=(None, )))
-        # self.model.add(GlobalAveragePooling1D())
-        self.model.add(Dense(1000, activation="relu"))
-        self.model.add(Dense(100, activation="relu"))
-        # self.model.add(Dense(100, activation="relu"))
-        self.model.add(Dense(16, activation="relu"))
-        self.model.add(Dense(1, activation="sigmoid"))
+        self.model.add(keras.layers.Embedding(self.vocab_size, 16, input_shape=(None,)))
+        self.model.add(keras.layers.GlobalAveragePooling1D())
+        self.model.add(keras.layers.Dense(16, activation='relu'))
+        self.model.add(keras.layers.Dense(1, activation='sigmoid'))
 
         self.model.summary()
         self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
