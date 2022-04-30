@@ -36,8 +36,8 @@ class BreastCancerClassifier:
         :return:
         """
         self.dataset = self.dataset.iloc[:, 1:12]
-        self.dataset = self.dataset.sample(frac=1)
-        self.dataset.info()
+        # self.dataset = self.dataset.sample(frac=1)
+        # self.dataset.info()
 
     def split_dataset(self, scale=True):
         """
@@ -53,12 +53,12 @@ class BreastCancerClassifier:
         self.train_X, self.test_X, self.train_y, self.test_y = train_test_split(X, y, test_size=0.2, random_state=42)
         print("Number of Data in Training Set: ", len(self.train_X), "  Number of Data in Test Set: ", len(self.test_X))
 
-    def train_model(self):
+    def train_model(self, break_ties=False):
         """
         To train model using trainingSet
         :return:
         """
-        self.svc = SVC(kernel='linear') # To define model
+        self.svc = SVC(kernel='linear', break_ties=break_ties)  # To define model
         self.svc.fit(self.train_X, self.train_y)    # To train model
         dump(self.svc, "./breast_cancer_classifier.joblib")     # To save trained model to local
 
@@ -77,6 +77,9 @@ class BreastCancerClassifier:
         To evaluate model
         :return: dict, performance results
         """
+        if self.svc.kernel == "precomputed":
+            self.test_X = self.custom_kernel(self.test_X, self.test_X)
+        print(self.test_X.shape)
         y_pred = self.predict(self.test_X)
         result = classification_report(self.test_y, y_pred)
         acc_result = accuracy_score(self.test_y, y_pred)
@@ -115,25 +118,92 @@ class BreastCancerClassifier:
         print(gs.best_params_)
 
 
+    def custom_kernel(self, X, y):
+        return np.dot(X, y.T)
+
+    def apply_custom_kernel(self):
+        self.svc = SVC(kernel="precomputed")
+        # self.train_X = self.train_X.to_numpy()
+        self.train_X = self.custom_kernel(self.train_X, self.train_X)
+        print(self.train_X.shape)
+        self.svc.fit(self.train_X, self.train_y)
+        # self.test_X = self.train_X.to_numpy()
+        self.test_X = self.custom_kernel(self.test_X, self.test_X)
+        ev_result = self.evaluate_model()
+        print(ev_result["Accuracy"])
+        print(ev_result["Precision"])
+        print(ev_result["Recall"])
+
+
 if __name__ == '__main__':
     bcc = BreastCancerClassifier()
     bcc.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")
     bcc.preprocess()
     bcc.split_dataset()
+    bcc.apply_custom_kernel()
 
-    bcc.grid_search(kernel="rbf", param_grid={'kernel':['rbf'],
-                                              'gamma':['scale', "auto"],
-                                              "C": [0.1, 1.0, 10],
-                                              "tol":[0.001, 0.1]})
+    # bcc.grid_search(kernel="rbf", param_grid={'kernel':['rbf'],
+    #                                           'gamma':['scale', "auto"],
+    #                                           "C": [0.1, 1.0, 10],
+    #                                           "tol":[0.001, 0.1]})
 
-    # bcc.train_model()
+    bcc = BreastCancerClassifier()
+    bcc.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")
+    bcc.preprocess()
+    bcc.split_dataset()
+    bcc.train_model()
     # print(bcc.predict(bcc.test_X))
     # print(np.array(bcc.test_y.values.tolist()))
-    # ev_result = bcc.evaluate_model()
-    # print("Applied Hyperparameters: Kernel-> Linear, Scaling")
-    # print(ev_result["Accuracy"])
-    # print(ev_result["Precision"])
-    # print(ev_result["Recall"])
+    ev_result = bcc.evaluate_model()
+    print("Applied Hyperparameters: Kernel-> Linear, Scaling")
+    print(ev_result["Accuracy"])
+    print(ev_result["Precision"])
+    print(ev_result["Recall"])
+
+    print("\n\n")
+
+    bcc = BreastCancerClassifier()
+    bcc.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")
+    bcc.preprocess()
+    bcc.split_dataset()
+    bcc.finetune_model(kernel="poly")
+    # print(bcc.predict(bcc.test_X))
+    # print(np.array(bcc.test_y.values.tolist()))
+    ev_result = bcc.evaluate_model()
+    print("Applied Hyperparameters: Kernel-> POLY")
+    print(ev_result["Accuracy"])
+    print(ev_result["Precision"])
+    print(ev_result["Recall"])
+    print("\n\n")
+
+    bcc = BreastCancerClassifier()
+    bcc.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")
+    bcc.preprocess()
+    bcc.split_dataset()
+    bcc.finetune_model(kernel="rbf")
+    # print(bcc.predict(bcc.test_X))
+    # print(np.array(bcc.test_y.values.tolist()))
+    ev_result = bcc.evaluate_model()
+    print("Applied Hyperparameters: Kernel-> RBF, Scaling")
+    print(ev_result["Accuracy"])
+    print(ev_result["Precision"])
+    print(ev_result["Recall"])
+    print("\n\n")
+
+    bcc = BreastCancerClassifier()
+    bcc.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")
+    bcc.preprocess()
+    bcc.split_dataset()
+    bcc.finetune_model(kernel="sigmoid")
+    # print(bcc.predict(bcc.test_X))
+    # print(np.array(bcc.test_y.values.tolist()))
+    ev_result = bcc.evaluate_model()
+    print("Applied Hyperparameters: Kernel-> Sigmoid, Scaling")
+    print(ev_result["Accuracy"])
+    print(ev_result["Precision"])
+    print(ev_result["Recall"])
+    print("\n\n")
+
     #
     # # bcc2 = BreastCancerClassifier()
     # # bcc2.load_dataset("../dataset/Breast Cancer Wisconsin Dataset/data.csv")

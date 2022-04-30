@@ -9,6 +9,8 @@ from sklearn.metrics import accuracy_score, recall_score, precision_score, class
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 import numpy as np
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 
 class FaceRecognizer:
@@ -23,7 +25,11 @@ class FaceRecognizer:
         """
         self.data = fetch_lfw_people(min_faces_per_person=min_faces)
         self.features = self.data.data
+        self.images = self.data.images
         self.labels = self.data.target
+        self.names = self.data.target_names
+
+        print(self.names)
         print("# of Dataset: ", len(self.labels))
 
     def split_data(self, test_rate=0.2):
@@ -33,6 +39,8 @@ class FaceRecognizer:
         :return:
         """
         self.train_X, self.test_X, self.train_y, self.test_y = train_test_split(self.features, self.labels,
+                                                                                test_size=test_rate, random_state=42)
+        _, self.img_x,_, self.img_y = train_test_split(self.features, self.images,
                                                                                 test_size=test_rate, random_state=42)
         print("# of Instances in Training Set: ", len(self.train_X))
         print("# of Instances in Test Set: ", len(self.test_X))
@@ -97,15 +105,23 @@ if __name__ == '__main__':
     fr = FaceRecognizer()
     fr.load_data()
     fr.split_data()
-    print(fr.test_X[0])
-    # fr.train_model()
-    # y_pred = fr.predict(fr.test_X)
-    # print(np.array(fr.test_y))
-    # print(y_pred)
-    # result = fr.evaluate_model(fr.test_y, y_pred)
-    # print("Accuracy: ", result["Accuracy"])
-    # print("Classification Report: \n", result["Classification Report"])
-    # print()
+    print(fr.test_y)
+    print("[", end="")
+    for t in fr.test_y:
+        print(fr.names[t], end=", ")
+    print("]")
+    fr.train_model()
+    y_pred = fr.predict(fr.test_X)
+    print(np.array(fr.test_y))
+    print(y_pred)
+    print("[", end="")
+    for t in y_pred:
+        print(fr.names[t], end=", ")
+    print("]")
+    result = fr.evaluate_model(fr.test_y, y_pred)
+    print("Accuracy: ", result["Accuracy"])
+    print("Classification Report: \n", result["Classification Report"])
+    print()
     #
     # fr.finetune_model(C=5)
     # y_pred = fr.predict(fr.test_X)
